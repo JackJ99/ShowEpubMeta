@@ -7,28 +7,66 @@ from ebooklib import epub
 import os
 import sys
 
-global verplichteMetadata
-global optioneleMetadata
+global metadataLijst
+global INDEXKEY
+global INDEXNAMESPACE
+global INDEXTYPE
+global INDEXMANDOPT
+global INDEXLIST
+global INDEXDETAIL
+global INDEXHEADING
 global separator
 global lastUsedPath
 global opf
+#                                                           HEADING
+#                                            IN DETAIL VIEW   |
+#                                       IN LIST VIEW    |     |
+#                             MANDATORY/OPTIONAL   |    |     |
+#                                     TYPE    |    |    |     |
+#                           NAMESPACE    |    |    |    |     |
+#                    KEY           |     |    |    |    |     |
+metadataLijst = [
+                  ['identifier',  'DC', 'M', 'M', 'Y', 'Y', 'Identificatie'], \
+                  ['title',       'DC', 'E', 'M', 'Y', 'Y', 'Titel'], \
+                  ['language',    'DC', 'E', 'M', 'Y', 'Y', 'Taal'], \
+                  ['creator',     'DC', 'M', 'O', 'Y', 'Y', 'Maker'] ,\
+                  ['contributor', 'DC', 'M', 'O', 'Y', 'Y', 'Bijdrage van'], \
+                  ['publisher',   'DC', 'E', 'O', 'Y', 'Y', 'Uitgever'], \
+                  ['rights',      'DC', 'E', 'O', 'Y', 'Y', 'Rechten'], \
+                  ['coverage',    'DC', 'E', 'O', 'Y', 'Y', 'Dekking'], \
+                  ['date',        'DC', 'M', 'O', 'Y', 'Y', 'Datum'], \
+                  ['source',      'DC', 'E', 'O', 'Y', 'Y', 'Bron'], \
+                  ['format',      'DC', 'E', 'O', 'Y', 'Y', 'Formaat'], \
+                  ['type',        'DC', 'M', 'O', 'Y', 'Y', 'Soort'], \
+                  ['relation',    'DC', 'E', 'O', 'Y', 'Y', 'Relatie'], \
+                  ['description', 'DC', 'D', 'O', 'N', 'Y', 'Beschrijving'] \
+                ]
+INDEXKEY = 0
+INDEXNAMESPACE = 1
+INDEXTYPE = 2
+INDEXMANDOPT = 3
+INDEXLIST = 4
+INDEXDETAIL= 5
+INDEXHEADING = 6
 
-verplichteMetadata = ['identifier', \
-                        'title', \
-                        'language']
-optioneleMetadata = ['creator', \
-                        'contributor', \
-                        'publisher', \
-                        'rights', \
-                        'coverage', \
-                        'date', \
-                        'source', \
-                        'format', \
-                        'type', \
-                        'relation']
 separator = ';'
 lastUsedPath = ''
 opf = '{http://www.idpf.org/2007/opf}'
+
+def geefHeading(mdkey):
+    global metadataLijst
+    global INDEXKEY
+    global INDEXHEADING
+    uit = ''
+    #specials
+    if mdkey == 'root':
+        return ''
+    if mdkey == 'bestand':
+        return 'Bestand'
+    for mdlitem in metadataLijst:
+        if mdkey == mdlitem[INDEXKEY]:
+            return mdlitem[INDEXHEADING]
+    return uit
 
 def maakLijstMetadata(bf, md):
     global opf
@@ -40,7 +78,7 @@ def maakLijstMetadata(bf, md):
     lenopf = len(opf)
     lijstmduit = []
     for tag in md:
-        lijst = book.get_metadata('DC', tag)
+        lijst = book.get_metadata(tag[1], tag[0])
         # Dit maakt een LIST van TUPLES. Een tag kan meerdere voorkomens hebben.
         # Elk voorkomen is een voorkomen in de LIST.
         # Het TUPLE bestaat uit een STRING met de inhoud van de tag en een
@@ -74,28 +112,20 @@ def maakLijstMetadata(bf, md):
             lijstmduit.append('None')
     return lijstmduit
 
-def SchrijfMetadata(file, metadata, resultaatString):
-    for kolom in maakLijstMetadata(file, metadata):
-        resultaatString = resultaatString + ' ' + kolom
-    return resultaatString
-
-def GeefMetadata(bookfile):
-    global verplichteMetadata
-    global optioneleMetadata
-    resultaat = ''
-    resultaat = SchrijfMetadata(bookfile, verplichteMetadata, resultaat)
-    resultaat = SchrijfMetadata(bookfile, optioneleMetadata, resultaat)
-    return resultaat
-
 def OpenOutput():
-    global verplichteMetadata
-    global optioneleMetadata
+    global metadataLijst
+    global INDEXKEY
+    global INDEXNAMESPACE
+    global INDEXTYPE
+    global INDEXMANDOPT
+    global INDEXLIST
+    global INDEXDETAIL
+    global INDEXHEADING
     global separator
     outstring = '\"bestand\"'
-    for tag in verplichteMetadata:
-        outstring = outstring + separator + '\"' + tag + '\"'
-    for tag in optioneleMetadata:
-        outstring = outstring + separator + '\"' + tag + '\"'
+    for tag in metadataLijst:
+        if tag[INDEXLIST] == 'Y':
+            outstring = outstring + separator + '\"' + tag[INDEXHEADING] + '\"'
     return outstring
 
 def SluitOutput():
@@ -128,39 +158,29 @@ def showHelp():
     print("nog niet geïmplementeerd" + '\n')
     return None
 
-# def openProgressbar(rt):
-#     pb_popup = Toplevel(rt)
-#     pb_popup.geometry("300x50")
-#     pb_popup.title("Bezig")
-#     pb_popup.grid()
-#     # progressbar
-#     pbar = Progressbar(
-#         pb_popup,
-#         orient='horizontal',
-#         mode='indeterminate',
-#         length=280
-#     )
-#     # place the progressbar
-#     pbar.grid(column=0, row=0, columnspan=2, padx=10, pady=20)
-#     pbar.start()
-#     return pbar
-#
-# def sluitProgressbar(pbar):
-#     parent = pbar.winfo_parent()
-#     pbar.stop()
-#     return None
-
 # Open een map
 def openMap():
-    global verplichteMetadata
-    global optioneleMetadata
+    global metadataLijst
+    global INDEXKEY
+    global INDEXNAMESPACE
+    global INDEXTYPE
+    global INDEXMANDOPT
+    global INDEXLIST
+    global INDEXDETAIL
+    global INDEXHEADING
     for item in tv.selection():
         tv.selection_remove(item)
     for item in tv.get_children():
         tv.delete(item)
     m = askdirectory()
     if not m: return None
-    # pb = openProgressbar(tv)
+    metadata = []
+    for mdlitem in metadataLijst:
+        if mdlitem[INDEXLIST] == 'Y':
+            metadata.append((mdlitem[INDEXKEY], mdlitem[INDEXNAMESPACE]))
+    # wijzig de cursor in een klokje
+    tv.config(cursor="watch")
+    tv.update()
     for root, mappen, bestanden in os.walk(m, topdown=False):
         for b in bestanden:
             (r, e) = os.path.splitext(b)
@@ -170,10 +190,11 @@ def openMap():
                 md.append(root)
                 md.append(b)
                 boek = os.path.join(root, b)
-                md = md + maakLijstMetadata(boek, verplichteMetadata)
-                md = md + maakLijstMetadata(boek, optioneleMetadata)
+                md = md + maakLijstMetadata(boek, metadata)
                 tv.insert('', 'end', values=tuple(md))
-    # sluitProgressbar(pb)
+    tv.config(cursor="arrow")
+    tv.update()
+    # cursor weer teruggezet
     return None
 
 
@@ -216,241 +237,111 @@ def GeefOpties(l):
     return uit
 
 def bouwFrameEnkelvoudigeMeta(pu, md):
+    global metadataLijst
+    global INDEXKEY
+    global INDEXNAMESPACE
+    global INDEXTYPE
+    global INDEXMANDOPT
+    global INDEXLIST
+    global INDEXDETAIL
+    global INDEXHEADING
     enkelvoudigeMetaFrame = Frame(pu)
     # de geometrie opzetten voor de enkelvoudige metadata m.b.v. een grid
     enkelvoudigeMetaFrame.columnconfigure(0, weight=1)
     enkelvoudigeMetaFrame.columnconfigure(1, weight=3)
-    enkelvoudigeMetaFrame.rowconfigure([0, 1, 2, 3, 4, 5, 6, 7], weight=1)
-    # alle tekstvariabelen voor de enkelvoudige metadata
-    boektitel = StringVar(enkelvoudigeMetaFrame)
-    boektaal = StringVar(enkelvoudigeMetaFrame)
-    boekuitgever = StringVar(enkelvoudigeMetaFrame)
-    boekrechten = StringVar(enkelvoudigeMetaFrame)
-    boekdekking = StringVar(enkelvoudigeMetaFrame)
-    boekbron = StringVar(enkelvoudigeMetaFrame)
-    boekformaat = StringVar(enkelvoudigeMetaFrame)
-    boekrelatie = StringVar(enkelvoudigeMetaFrame)
-    # de labels en velden voor de enkelvoudige metadata
-    label_titel = Label(enkelvoudigeMetaFrame, text='Titel:')
-    label_titel.grid(column=0, row=0, sticky='w')
-    entry_titel = Entry(enkelvoudigeMetaFrame, textvariable=boektitel)
-    entry_titel.grid(column=1, row=0, sticky='e')
-    title_lijst = md.get_metadata('DC', 'title')
-    if len(title_lijst) > 0:
-        title = title_lijst[0]
-        boektitel.set(title[0])
-    #
-    label_taal = Label(enkelvoudigeMetaFrame, text='Taal:')
-    label_taal.grid(column=0, row=1, sticky='w')
-    entry_taal = Entry(enkelvoudigeMetaFrame, textvariable=boektaal)
-    entry_taal.grid(column=1, row=1, sticky='e')
-    language_lijst = md.get_metadata('DC', 'language')
-    if len(language_lijst) > 0:
-        language = language_lijst[0]
-        boektaal.set(language[0])
-    #
-    label_uitgever = Label(enkelvoudigeMetaFrame, text='Uitgever:')
-    label_uitgever.grid(column=0, row=2, sticky='w')
-    entry_uitgever = Entry(enkelvoudigeMetaFrame, textvariable=boekuitgever)
-    entry_uitgever.grid(column=1, row=2, sticky='e')
-    publisher_lijst =  md.get_metadata('DC', 'publisher')
-    if len(publisher_lijst) > 0:
-        publisher = publisher_lijst[0]
-        boekuitgever.set(publisher[0])
-    #
-    label_rechten = Label(enkelvoudigeMetaFrame, text='Rechten:')
-    label_rechten.grid(column=0, row=3, sticky='w')
-    entry_rechten = Entry(enkelvoudigeMetaFrame, textvariable=boekrechten)
-    entry_rechten.grid(column=1, row=3, sticky='e')
-    rights_lijst =  md.get_metadata('DC', 'rights')
-    if len(rights_lijst) > 0:
-        rights = rights_lijst[0]
-        boekrechten.set(rights[0])
-    #
-    label_dekking = Label(enkelvoudigeMetaFrame, text='Dekking:')
-    label_dekking.grid(column=0, row=4, sticky='w')
-    entry_dekking = Entry(enkelvoudigeMetaFrame, textvariable=boekdekking)
-    entry_dekking.grid(column=1, row=4, sticky='e')
-    coverage_lijst =  md.get_metadata('DC', 'coverage')
-    if len(coverage_lijst) > 0:
-        coverage = coverage_lijst[0]
-        boekdekking.set(coverage[0])
-    #
-    label_bron = Label(enkelvoudigeMetaFrame, text='Bron:')
-    label_bron.grid(column=0, row=5, sticky='w')
-    entry_bron = Entry(enkelvoudigeMetaFrame, textvariable=boekbron)
-    entry_bron.grid(column=1, row=5, sticky='e')
-    source_lijst =  md.get_metadata('DC', 'source')
-    if len(source_lijst) > 0:
-        source = source_lijst[0]
-        boekbron.set(source[0])
-    #
-    label_formaat = Label(enkelvoudigeMetaFrame, text='Formaat:')
-    label_formaat.grid(column=0, row=6, sticky='w')
-    entry_formaat = Entry(enkelvoudigeMetaFrame, textvariable=boekformaat)
-    entry_formaat.grid(column=1, row=6, sticky='e')
-    format_lijst =  md.get_metadata('DC', 'format')
-    if len(format_lijst) > 0:
-        format = format_lijst[0]
-        boekformaat.set(format[0])
-    #
-    label_relatie = Label(enkelvoudigeMetaFrame, text='Relatie:')
-    label_relatie.grid(column=0, row=7, sticky='w')
-    entry_relatie = Entry(enkelvoudigeMetaFrame, textvariable=boekrelatie)
-    entry_relatie.grid(column=1, row=7, sticky='e')
-    relation_lijst =  md.get_metadata('DC', 'relation')
-    if len(relation_lijst) > 0:
-        relation = relation_lijst[0]
-        boekrelatie.set(relation[0])
+    itemnr = 0
+    boekvar = []
+    boeklabel = []
+    boekentry = []
+    for mdlitem in metadataLijst:
+        if mdlitem[INDEXDETAIL] == 'Y' and mdlitem[INDEXTYPE] == 'E':
+            enkelvoudigeMetaFrame.rowconfigure([itemnr], weight=1)
+            boekvar.append(StringVar(enkelvoudigeMetaFrame))
+            # de labels en velden voor de enkelvoudige metadata
+            boeklabel.append(Label(enkelvoudigeMetaFrame, text=mdlitem[INDEXHEADING]))
+            boeklabel[itemnr].grid(column=0, row=itemnr, sticky='w')
+            boekentry.append(Entry(enkelvoudigeMetaFrame, textvariable=boekvar[itemnr]))
+            boekentry[itemnr].grid(column=1, row=itemnr, sticky='e')
+            entry_lijst = md.get_metadata(mdlitem[INDEXNAMESPACE], mdlitem[INDEXKEY])
+            if len(entry_lijst) > 0:
+                entry = entry_lijst[0]
+                boekvar[itemnr].set(entry[0])
+            itemnr += 1
     # plaats frame voor enkelvoudige metadata in de geometrie
     enkelvoudigeMetaFrame.grid(column=0, row=0, sticky='nw')
     return None
 
-def bouwIdentifierFrame(rt, md, h, w):
-    identifier_frame = Frame(rt)
-
-    identifier_lb = Listbox(identifier_frame, height=h, width=w)
-
-    identifier_ybar = Scrollbar(identifier_frame, orient=VERTICAL)
-    identifier_ybar.pack(side=RIGHT, fill=Y)
-    identifier_xbar = Scrollbar(identifier_frame, orient=HORIZONTAL)
-    identifier_xbar.pack(side=BOTTOM, fill=X)
-
-    identifier_lb.pack(side=LEFT)
-
-    identifier_lb.configure(yscrollcommand=identifier_ybar.set)
-    identifier_ybar.config(command=identifier_lb.yview)
-    identifier_lb.configure(xscrollcommand=identifier_xbar.set)
-    identifier_xbar.config(command=identifier_lb.xview)
-    identifiers = md.get_metadata('DC', 'identifier')
-    for identifier in identifiers:
-        identifier_lb.insert(END, GeefOpties(identifier))
-
-    identifier_frame.grid(column=1, row=1, padx=5, pady=5, sticky='sw')
-    return None
-
-def bouwCreatorFrame(rt, md, h, w):
-    creator_frame = Frame(rt)
-
-    creator_lb = Listbox(creator_frame, height=h, width=w)
-
-    creator_ybar = Scrollbar(creator_frame, orient=VERTICAL)
-    creator_ybar.pack(side=RIGHT, fill=Y)
-    creator_xbar = Scrollbar(creator_frame, orient=HORIZONTAL)
-    creator_xbar.pack(side=BOTTOM, fill=X)
-
-    creator_lb.pack(side=LEFT)
-
-    creator_lb.configure(yscrollcommand=creator_ybar.set)
-    creator_ybar.config(command=creator_lb.yview)
-    creator_lb.configure(xscrollcommand=creator_xbar.set)
-    creator_xbar.config(command=creator_lb.xview)
-    creators = md.get_metadata('DC', 'creator')
-    for creator in creators:
-        creator_lb.insert(END, GeefOpties(creator))
-
-    creator_frame.grid(column=1, row=3, padx=5, pady=5)
-    return None
-
-def bouwContributorFrame(rt, md, h, w):
-    contributor_frame = Frame(rt)
-
-    contributor_lb = Listbox(contributor_frame, height=h, width=w)
-
-    contributor_ybar = Scrollbar(contributor_frame, orient=VERTICAL)
-    contributor_ybar.pack(side=RIGHT, fill=Y)
-    contributor_xbar = Scrollbar(contributor_frame, orient=HORIZONTAL)
-    contributor_xbar.pack(side=BOTTOM, fill=X)
-
-    contributor_lb.pack(side=LEFT)
-
-    contributor_lb.configure(yscrollcommand=contributor_ybar.set)
-    contributor_ybar.config(command=contributor_lb.yview)
-    contributor_lb.configure(xscrollcommand=contributor_xbar.set)
-    contributor_xbar.config(command=contributor_lb.xview)
-    contributors = md.get_metadata('DC', 'contributor')
-    for contributor in contributors:
-        contributor_lb.insert(END, GeefOpties(contributor))
-
-    contributor_frame.grid(column=1, row=5, padx=5, pady=5)
-    return None
-def bouwDateFrame(rt, md, h, w):
-    date_frame = Frame(rt)
-
-    date_lb = Listbox(date_frame, height=h, width=w)
-
-    date_ybar = Scrollbar(date_frame, orient=VERTICAL)
-    date_ybar.pack(side=RIGHT, fill=Y)
-    date_xbar = Scrollbar(date_frame, orient=HORIZONTAL)
-    date_xbar.pack(side=BOTTOM, fill=X)
-
-    date_lb.pack(side=LEFT)
-
-    date_lb.configure(yscrollcommand=date_ybar.set)
-    date_ybar.config(command=date_lb.yview)
-    date_lb.configure(xscrollcommand=date_xbar.set)
-    date_xbar.config(command=date_lb.xview)
-    dates = md.get_metadata('DC', 'date')
-    for date in dates:
-        date_lb.insert(END, GeefOpties(date))
-
-    date_frame.grid(column=1, row=7, padx=5, pady=5)
-    return None
-
-def bouwTypeFrame(rt, md, h, w):
-    type_frame = Frame(rt)
-
-    type_lb = Listbox(type_frame, height=h, width=w)
-
-    type_ybar = Scrollbar(type_frame, orient=VERTICAL)
-    type_ybar.pack(side=RIGHT, fill=Y)
-    type_xbar = Scrollbar(type_frame, orient=HORIZONTAL)
-    type_xbar.pack(side=BOTTOM, fill=X)
-
-    type_lb.pack(side=LEFT)
-
-    type_lb.configure(yscrollcommand=type_ybar.set)
-    type_ybar.config(command=type_lb.yview)
-    type_lb.configure(xscrollcommand=type_xbar.set)
-    type_xbar.config(command=type_lb.xview)
-    types = md.get_metadata('DC', 'type')
-    for type in types:
-        type_lb.insert(END, GeefOpties(type))
-
-    type_frame.grid(column=1, row=9, padx=5, pady=5)
+def bouwMvSubFrame(rt, md, mdi, h, w, r):
+    global metadataLijst
+    global INDEXKEY
+    global INDEXNAMESPACE
+    global INDEXTYPE
+    global INDEXMANDOPT
+    global INDEXLIST
+    global INDEXDETAIL
+    global INDEXHEADING
+    mvSubframe = Frame(rt)
+    mvSubframe_lb = Listbox(mvSubframe, height=h, width=w)
+    mvSubframe_ybar = Scrollbar(mvSubframe, orient=VERTICAL)
+    mvSubframe_ybar.pack(side=RIGHT, fill=Y)
+    mvSubframe_xbar = Scrollbar(mvSubframe, orient=HORIZONTAL)
+    mvSubframe_xbar.pack(side=BOTTOM, fill=X)
+    mvSubframe_lb.pack(side=LEFT)
+    mvSubframe_lb.configure(yscrollcommand=mvSubframe_ybar.set)
+    mvSubframe_ybar.config(command=mvSubframe_lb.yview)
+    mvSubframe_lb.configure(xscrollcommand=mvSubframe_xbar.set)
+    mvSubframe_xbar.config(command=mvSubframe_lb.xview)
+    items = md.get_metadata(mdi[INDEXNAMESPACE], mdi[INDEXKEY])
+    for item in items:
+        mvSubframe_lb.insert(END, GeefOpties(item))
+    mvSubframe.grid(column=1, row=r, padx=5, pady=5, sticky='sw')
     return None
 
 def bouwFrameMeervoudigeMeta(pu, md):
+    global metadataLijst
+    global INDEXKEY
+    global INDEXNAMESPACE
+    global INDEXTYPE
+    global INDEXMANDOPT
+    global INDEXLIST
+    global INDEXDETAIL
+    global INDEXHEADING
     meervoudigeMetaFrame = Frame(pu)
     # de geometrie van het frame voor meervoudige data opzetten
     meervoudigeMetaFrame.columnconfigure(0, weight=1)
     meervoudigeMetaFrame.columnconfigure(1, weight=9)
-    meervoudigeMetaFrame.rowconfigure([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], weight=1)
     listboxHoogte = 2
     listboxBreedte = 25
-    identifier_label = Label(meervoudigeMetaFrame, text='Identifiers')
-    identifier_label.grid(column=0, row=0, columnspan=2, sticky='w')
-    bouwIdentifierFrame(meervoudigeMetaFrame, md, listboxHoogte, listboxBreedte)
-    creator_label = Label(meervoudigeMetaFrame, text='Maker')
-    creator_label.grid(column=0, row=2, columnspan=2, sticky='nw')
-    bouwCreatorFrame(meervoudigeMetaFrame, md, listboxHoogte, listboxBreedte)
-    contributor_label = Label(meervoudigeMetaFrame, text='Bijdrage van')
-    contributor_label.grid(column=0, row=4, columnspan=2, sticky='w')
-    bouwContributorFrame(meervoudigeMetaFrame, md, listboxHoogte, listboxBreedte)
-    date_label = Label(meervoudigeMetaFrame, text='Data')
-    date_label.grid(column=0, row=6, columnspan=2, sticky='w')
-    bouwDateFrame(meervoudigeMetaFrame, md, listboxHoogte, listboxBreedte)
-    type_label = Label(meervoudigeMetaFrame, text='Soort')
-    type_label.grid(column=0, row=8, columnspan=2, sticky='w')
-    bouwTypeFrame(meervoudigeMetaFrame, md, listboxHoogte, listboxBreedte)
+    mvlabel = []
+    itemnr = 0
+    for mdlitem in metadataLijst:
+        if mdlitem[INDEXDETAIL] == 'Y' and mdlitem[INDEXTYPE] == 'M':
+            meervoudigeMetaFrame.rowconfigure([2 * itemnr, 2 * itemnr + 1], weight=1)
+            mvlabel.append(Label(meervoudigeMetaFrame, text=mdlitem[INDEXHEADING]))
+            mvlabel[itemnr].grid(column=0, row=(2 * itemnr), columnspan=2, sticky='w')
+            bouwMvSubFrame(meervoudigeMetaFrame, md, mdlitem, listboxHoogte, listboxBreedte, 2 * itemnr + 1)
+            itemnr += 1
     # plaats frame voor de meervoudige metadata in de geometrie
     meervoudigeMetaFrame.grid(column=0, row=1, sticky='sw')
     return None
 
 def bouwFrameBeschrijving(pu, md):
+    global metadataLijst
+    global INDEXKEY
+    global INDEXNAMESPACE
+    global INDEXTYPE
+    global INDEXMANDOPT
+    global INDEXLIST
+    global INDEXDETAIL
+    global INDEXHEADING
     beschrijvingFrame = Frame(pu)
     # label en veld voor de beschrijving
-    label_beschrijving = Label(beschrijvingFrame, text='Beschrijving')
+    for mdlitem in metadataLijst:
+        if mdlitem[INDEXTYPE] == 'D' and mdlitem[INDEXDETAIL] == 'Y' :
+            label_beschrijving = Label(beschrijvingFrame, text=mdlitem[INDEXHEADING])
+            namespace = mdlitem[INDEXNAMESPACE]
+            key = mdlitem[INDEXKEY]
+            break
     label_beschrijving.pack(side=TOP)
     text_frame = Frame(beschrijvingFrame)
     text_beschrijving = Text(text_frame, height=40, width=50)
@@ -458,15 +349,12 @@ def bouwFrameBeschrijving(pu, md):
     text_ybar.pack(side=RIGHT, fill=Y)
     text_xbar = Scrollbar(text_frame, orient=HORIZONTAL)
     text_xbar.pack(side=BOTTOM, fill=X)
-
-    #text_beschrijving.pack(side=LEFT)
-
     text_beschrijving.configure(yscrollcommand=text_ybar.set)
     text_ybar.config(command=text_beschrijving.yview)
     text_beschrijving.configure(xscrollcommand=text_xbar.set)
     text_xbar.config(command=text_beschrijving.xview)
     # de beschrijving
-    description_lijst = md.get_metadata('DC', 'description')
+    description_lijst = md.get_metadata(namespace, key)
     if len(description_lijst) > 0:
         description = description_lijst[0]
         text_beschrijving.insert(END, description[0])
@@ -548,7 +436,13 @@ xbar = Scrollbar(frame, orient=HORIZONTAL)
 xbar.pack(side=BOTTOM, fill=X)
 
 # Create treeview
-metadata = ['root', 'bestand'] + verplichteMetadata + optioneleMetadata
+metadata = ['root', 'bestand']
+for mdlistitem in metadataLijst:
+    if mdlistitem[INDEXMANDOPT] == 'M' and mdlistitem[INDEXLIST] == 'Y':
+        metadata.append(mdlistitem[INDEXKEY])
+for mdlistitem in metadataLijst:
+    if mdlistitem[INDEXMANDOPT] == 'O' and mdlistitem[INDEXLIST] == 'Y':
+        metadata.append(mdlistitem[INDEXKEY])
 kolommen = tuple(metadata)
 tvoptions = {}
 tvoptions['columns'] = kolommen
@@ -559,37 +453,13 @@ tvoptions['show'] = 'headings'
 tvoptions['yscrollcommand'] = ybar.set
 tvoptions['xscrollcommand'] = xbar.set
 tv = Treeview(frame, **tvoptions)
-tv.column('root', width=0, stretch=False, anchor='nw')
-tv.column('bestand', width=100, stretch=False, anchor='nw')
-tv.column('identifier', width=100, stretch=False, anchor='nw')
-tv.column('title',  width=100, stretch=False, anchor='nw')
-tv.column('language', width=100, stretch=False, anchor='nw')
-tv.column('creator',  width=100, stretch=False, anchor='nw')
-tv.column('contributor',  width=100, stretch=False, anchor='nw')
-tv.column('publisher',  width=100, stretch=False, anchor='nw')
-tv.column('rights', width=100, stretch=False, anchor='nw')
-tv.column('coverage', width=100, stretch=False, anchor='nw')
-tv.column('date',  width=100, stretch=False, anchor='nw')
-tv.column('source',  width=100, stretch=False, anchor='nw')
-tv.column('format', width=100, stretch=False, anchor='nw')
-tv.column('type',  width=100, stretch=False, anchor='nw')
-tv.column('relation', width=100, stretch=False, anchor='nw')
-
-tv.heading('root', text='', anchor='nw')
-tv.heading('bestand', text='Bestand', anchor='nw')
-tv.heading('identifier', text='Id.', anchor='nw')
-tv.heading('title',  text='Titel', anchor='nw')
-tv.heading('language', text='Taal', anchor='nw')
-tv.heading('creator',  text='Maker', anchor='nw')
-tv.heading('contributor',  text='Bijdrage van', anchor='nw')
-tv.heading('publisher',  text='Uitgever', anchor='nw')
-tv.heading('rights', text='Rechten', anchor='nw')
-tv.heading('coverage', text='Dekking', anchor='nw')
-tv.heading('date',  text='Datum', anchor='nw')
-tv.heading('source',  text='Bron', anchor='nw')
-tv.heading('format', text='Formaat', anchor='nw')
-tv.heading('type',  text='Soort', anchor='nw')
-tv.heading('relation', text='Relatie', anchor='nw')
+for mditem in metadata:
+    if mditem == 'root':
+        colwidth=0
+    else:
+        colwidth=100
+    tv.column(mditem, width=colwidth, stretch=False, anchor='nw')
+    tv.heading(mditem, text=geefHeading(mditem), anchor='nw')
 
 tv.bind('<Double-Button-1>', ToonMetaData)
 
