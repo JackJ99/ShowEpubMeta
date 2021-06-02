@@ -138,7 +138,12 @@ def maakCsvRegelOp(t):
     outstring = '\"' + os.path.join(t[0], t[1]) + '\"'
     for kolom in t:
         if t.index(kolom) > 1:
-            outstring = outstring + separator + '\"' + kolom + '\"'
+            outstring = outstring + separator + '\"'
+            try:
+                outstring = outstring + kolom
+            except:
+                outstring = outstring + 'onleesbaar teken'
+            outstring = outstring + '\"'
     return outstring
 
 # neem de inhoud van het scherm over in een csv
